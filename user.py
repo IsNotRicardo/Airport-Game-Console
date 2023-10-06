@@ -1,11 +1,6 @@
 import game
 
 
-# This function asks for the screen_name and checks if it already exists
-def username():
-    return False
-
-
 # This function changes the settings that can only have one option
 def change_setting(opt_list, value):
     choice = choose_option() - 1
@@ -41,11 +36,7 @@ def start_game(diff, dist):
               "1. Yes\n"
               "2. No\n")
         if choose_option() == 1:
-            """
-            
-            Start the game
-            
-            """
+            return diff.index('X'), dist.index('X')
         else:
             print("Returning to settings...\n")
     else:
@@ -74,23 +65,23 @@ def new_game():
 
         match choose_option():
             case 1:
-                start_game(difficulty, distance)
+                game_settings = start_game(difficulty, distance)
+                if 0 <= game_settings[0] <= 2 and 0 <= game_settings[1] <= 2:
+                    return game_settings
             case 2:
                 print("Change difficulty: \n"
                       "1. Easy\n"
                       "2. Normal\n"
                       "3. Hard\n")
 
-                if change_setting(difficulty, len(difficulty)) != -1:
-                    continue
+                change_setting(difficulty, len(difficulty))
             case 3:
                 print("Change distance: \n"
                       "1. Near\n"
                       "2. Average\n"
                       "3. Far\n")
 
-                if change_setting(distance, len(distance)) != -1:
-                    continue
+                change_setting(distance, len(distance))
             case 4:
                 print("Extra settings: \n"
                       "1. Overwater Modifier\n"
@@ -110,10 +101,11 @@ def new_game():
 
 # Work in progress, needs more information
 def main():
-    if not username():
-        new_game()
+    if not game.username():
+        settings = new_game()
+        game.init_game(settings[0], settings[1])
     else:
-        game.navigation()
+        game.navigation_system()
 
 
 main()
