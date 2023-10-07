@@ -19,10 +19,13 @@ def username():
     return False
 
 
-def init_game(difficulty, distance):
-    print(difficulty, distance)
+# This function initializes a new game
+def init_game(settings):
+    # settings[0] is difficulty, settings[1] is distance
+    print(settings[0], settings[1])
 
 
+# This function takes care of the navigation during the game
 def navigation_system():
     origin = geopy.Point(lat1, lon1)
     destination = geodesic(kilometers=d).destination(origin, b)

@@ -11,10 +11,8 @@ def change_setting(opt_list, value):
                 opt_list[num] = 'X'
             else:
                 opt_list[num] = ' '
-        return choice
     else:
         print("Invalid option!")
-        return -1
 
 
 # This generic function asks the user to select an option
@@ -41,6 +39,7 @@ def start_game(diff, dist):
             print("Returning to settings...\n")
     else:
         print("You must select a Difficulty and a Distance first!")
+    return -1, -1
 
 
 # This function is where the user chooses the settings of a new game
@@ -102,8 +101,7 @@ def new_game():
 # Work in progress, needs more information
 def main():
     if not game.username():
-        settings = new_game()
-        game.init_game(settings[0], settings[1])
+        game.init_game(new_game())
     else:
         game.navigation_system()
 
