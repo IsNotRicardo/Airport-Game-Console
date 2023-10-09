@@ -11,6 +11,8 @@ def change_setting(opt_list, value):
                 opt_list[num] = 'X'
             else:
                 opt_list[num] = ' '
+
+        print("Setting changed!")
     else:
         print("Invalid option!")
 
@@ -36,7 +38,7 @@ def start_game(diff, dist):
         if choose_option() == 1:
             return diff.index('X'), dist.index('X')
         else:
-            print("Returning to settings...\n")
+            print("Returning to settings...")
     else:
         print("You must select a Difficulty and a Distance first!")
     return -1, -1
@@ -90,12 +92,17 @@ def new_game():
                 if 0 <= choice_extra <= len(extra) - 1:
                     if extra[choice_extra] == ' ':
                         extra[choice_extra] = 'X'
+                        print("Modifier added!")
                     else:
                         extra[choice_extra] = ' '
+                        print("Modifier removed!")
             case 5:
                 quit()
             case _:
                 print("Invalid option!")
+
+        input("Press any key to continue")
+        print("\n" * 100)
 
 
 # Work in progress, needs more information
