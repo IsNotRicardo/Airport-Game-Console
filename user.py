@@ -1,6 +1,3 @@
-import game
-
-
 # This function changes the settings that can only have one option
 def change_setting(opt_list, value):
     choice = choose_option() - 1
@@ -49,6 +46,7 @@ def new_game():
     difficulty, distance, extra = [' '] * 3, [' '] * 3, [' '] * 2
 
     while True:
+        print("\n" * 100)
         print("\nGAME SETTINGS:\n")
         print("— Game Difficulty:\n"
               f"Easy[{difficulty[0]}]     Normal[{difficulty[1]}]     Hard[{difficulty[2]}]\n")
@@ -102,15 +100,3 @@ def new_game():
                 print("Invalid option!")
 
         input("Press any key to continue")
-        print("\n" * 100)
-
-
-# Work in progress, needs more information
-def main():
-    if not game.username():
-        game.init_game(new_game())
-    else:
-        game.navigation_system()
-
-
-main()
