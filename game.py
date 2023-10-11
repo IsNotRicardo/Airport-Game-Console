@@ -10,7 +10,7 @@ alter table game rename column co2_consumed to co2_limit;
 """
 
 import user
-import geopy
+import math
 import mysql.connector
 from geopy.distance import geodesic
 
@@ -65,6 +65,7 @@ def username():
                                     input("Press any key to continue")
                                     return True, user_name
                                 case 2:
+                                    cursor.execute(f"UPDATE game SET location = NULL, target = NULL WHERE screen_name = '{user_name}'")
                                     break
 
                     input("Press any key to continue")
@@ -76,35 +77,35 @@ def username():
 
 
 # This function initializes a new game
-def init_game(settings, screen_name):
-    # settings[0] is difficulty, settings[1] is distance
-
+def init_game(settings, user_name):
     value = False
     location, coords = list(range(2)), list(range(2))
+
     match settings[0]:
         case 0:
-            airport_type = "large_airport"
+            airport_type = "'large_airport'"
         case 1:
-            airport_type = "large_airport, medium_airport"
+            airport_type = "'large_airport' OR TYPE = 'medium_airport'"
         case 2:
-            airport_type = "large_airport, medium_airport, small_airport"
+            airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
 
     cursor = connection.cursor(buffered=True)
     cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
-                   f"WHERE type IN ('{airport_type}') ORDER BY RAND() LIMIT 1")
+                   f"WHERE type = {airport_type} ORDER BY RAND() LIMIT 1")
     location[0] = cursor.fetchall()
     for row in location[0]:
         coords[0] = [row[2], row[3]]
-        cursor.execute(f"UPDATE game SET location = '{row[0]}' WHERE screen_name = '{screen_name}'")
+        cursor.execute(f"UPDATE game SET location = '{row[0]}' WHERE screen_name = '{user_name}'")
 
     while True:
         cursor = connection.cursor(buffered=True)
         cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
-                       f"WHERE type IN ('{airport_type}') ORDER BY RAND() LIMIT 1")
+                       f"WHERE type = {airport_type} ORDER BY RAND() LIMIT 1")
         location[1] = cursor.fetchall()
         for row in location[1]:
             coords[1] = [row[2], row[3]]
 
+        print(coords)
         match settings[1]:
             case 0:
                 if 1000 <= geodesic(coords[0], coords[1]).km < 5000:
@@ -118,22 +119,93 @@ def init_game(settings, screen_name):
 
         if value:
             for row in location[1]:
-                cursor.execute(f"UPDATE game SET target = '{row[0]}' WHERE screen_name = '{screen_name}'")
+                cursor.execute(f"UPDATE game SET target = '{row[0]}' WHERE screen_name = '{user_name}'")
             print(location, geodesic(coords[0], coords[1]).km)
             break
 
 
 # This function takes care of the navigation during the game
-def navigation_system():
-    origin = geopy.Point(lat1, lon1)
-    destination = geodesic(kilometers=d).destination(origin, b)
+def navigation_system(difficulty, user_name):
+    temp_coords = list(range(2))
+    coords, location = list(range(3)), list(range(3))
+    # Index 0 = current airport, Index 1 = target airport, Index 2 = next airport
+    cursor = connection.cursor(buffered=True)
 
-    lat2, lon2 = destination.latitude, destination.longitude
+    for i in range(2):
+        if i == 0:
+            value = 'location'
+        else:
+            value = 'target'
+        cursor.execute(f"SELECT ident, name, latitude_deg, longitude_deg FROM airport LEFT JOIN game ON game.{value} = ident "
+                       f"WHERE game.screen_name = '{user_name}'")
+        location[i] = cursor.fetchall()
+        for row in location[i]:
+            coords[i] = [row[2], row[3]]
+
+    while True:
+        print('\n')
+        while True:
+            print("In order to travel you must select a direction.\n"
+                  "For an explanation of the direction system write 'explain'.\n")
+            option = input("Insert a direction: ")
+
+            if option != 'explain':
+                try:
+                    direction = float(option)
+                    break
+                except ValueError:
+                    print("Invalid option!\n")
+            else:
+                print('stuff\n')
+
+        while True:
+            print("In addition, you also need to select a distance (km).\n")
+            try:
+                distance = float(input("Insert a distance: "))
+            except ValueError:
+                print("Must be a float!\n")
+            else:
+                break
+
+        match difficulty:
+            case 0:
+                airport_type = "'large_airport'"
+            case 1:
+                airport_type = "'large_airport' OR TYPE = 'medium_airport'"
+            case 2:
+                airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
+
+        destination = geodesic(kilometers=distance).destination(coords[0], direction)
+        temp_coords[0] = [destination.latitude, destination.longitude]
+        cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
+                       f"WHERE type = {airport_type}")
+        airports = cursor.fetchall()
+
+        length = 1000
+        # Placeholder value for now
+        for row in airports:
+            temp_coords[1] = [row[2], row[3]]
+
+            if math.dist(temp_coords[0], temp_coords[1]) < length and math.dist(temp_coords[0], temp_coords[1]) != 0:
+                length = math.dist(temp_coords[0], temp_coords[1])
+                coords[2] = [row[2], row[3]]
+                location[2] = [row[0], row[1], row[2], row[3]]
+
+        if location[2] == location[0]:
+            print("You didn't find any airport in that direction!\n"
+                  "You have returned to...\n")
+        else:
+            print("You have landed at...")
+
+        if location[2] == location[1]:
+            print()
+            # FINISH GAME
 
 
 def main():
     user_info = username()
     settings = user.new_game()
+    # settings[0] is difficulty, settings[1] is distance
     if not user_info[0]:
         init_game(settings, user_info[1])
 

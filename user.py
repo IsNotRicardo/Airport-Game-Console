@@ -29,13 +29,8 @@ def choose_option():
 # This function determines if the user can start the game
 def start_game(diff, dist):
     if 'X' in diff and 'X' in dist:
-        print("Do you wish to start the game?\n"
-              "1. Yes\n"
-              "2. No\n")
-        if choose_option() == 1:
-            return diff.index('X'), dist.index('X')
-        else:
-            print("Returning to settings...")
+        print("Starting game...")
+        return diff.index('X'), dist.index('X')
     else:
         print("You must select a Difficulty and a Distance first!")
     return -1, -1
