@@ -24,14 +24,11 @@ connection = mysql.connector.connect(
 )
 
 
-# This function asks for the screen_name, checks if it already exists
-# and asks if the user wants to continue or start a new game
-def username():
+# This function asks for the screen_name and links it to its data
+def check_username():
     while True:
         print('\n' * 100)
         user_name = str(input("Hi, enter your username: "))
-        cursor = connection.cursor(buffered=True)
-        cursor.execute("SELECT screen_name FROM game WHERE screen_name = '" + user_name + "'")
 
         print(f"Are you sure that the username '{user_name}' is correct?\n"
               "1. Yes\n"
@@ -39,41 +36,51 @@ def username():
 
         match user.choose_option():
             case 1:
-                if cursor.rowcount == 0:
-                    cursor.execute("SELECT COUNT(id) from game")
-                    last_id = cursor.fetchone()
-                    total_id = last_id[0] + 1
-
-                    cursor.execute("INSERT INTO game (id ,co2_limit, co2_budget, location, screen_name, target, attempts, difficulty) "
-                                   f"VALUES ({total_id},'999', '10000', NULL, '{user_name}', NULL, NULL, NULL)")
-
-                    print("Username", user_name, "added to the database.\n")
-                    return False, user_name
-                else:
-                    print("Welcome back", user_name + '!\n')
-                    cursor.execute(f"SELECT target FROM game WHERE screen_name = '{user_name}'")
-                    game_session = cursor.fetchone()
-
-                    if game_session[0] is not None:
-                        while True:
-                            print("Do you wish to continue your previous game?\n"
-                                  "1. Yes\n"
-                                  "2. No\n")
-
-                            match user.choose_option():
-                                case 1:
-                                    input("Press any key to continue")
-                                    return True, user_name
-                                case 2:
-                                    cursor.execute(f"UPDATE game SET location = NULL, target = NULL WHERE screen_name = '{user_name}'")
-                                    break
-
-                    input("Press any key to continue")
-                    return False, user_name
+                return username_data(user_name)
             case 2:
                 print("Returning to the menu...\n")
             case _:
                 print("Invalid option!\n")
+
+
+# This functions checks the data from the username
+def username_data(user_name):
+    cursor = connection.cursor(buffered=True)
+    cursor.execute("SELECT screen_name FROM game WHERE screen_name = '" + user_name + "'")
+
+    if cursor.rowcount == 0:
+        cursor.execute("SELECT COUNT(id) from game")
+        last_id = cursor.fetchone()
+        total_id = last_id[0] + 1
+
+        cursor.execute(
+            "INSERT INTO game (id ,co2_limit, co2_budget, location, screen_name, target, attempts, difficulty) "
+            f"VALUES ({total_id},'999', '10000', NULL, '{user_name}', NULL, NULL, NULL)")
+
+        print("Username", user_name, "added to the database.\n")
+        return False, user_name
+    else:
+        print("Welcome back", user_name + '!\n')
+        cursor.execute(f"SELECT target FROM game WHERE screen_name = '{user_name}'")
+        game_session = cursor.fetchone()
+
+        if game_session[0] is not None:
+            while True:
+                print("Do you wish to continue your previous game?\n"
+                      "1. Yes\n"
+                      "2. No\n")
+
+                match user.choose_option():
+                    case 1:
+                        input("Press any key to continue")
+                        return True, user_name
+                    case 2:
+                        cursor.execute(
+                            f"UPDATE game SET location = NULL, target = NULL WHERE screen_name = '{user_name}'")
+                        break
+
+        input("Press any key to continue")
+        return False, user_name
 
 
 # This function initializes a new game
@@ -193,23 +200,28 @@ def navigation_system(difficulty, user_name):
 
         if location[2] == location[0]:
             print("You didn't find any airport in that direction!\n"
-                  "You have returned to...\n")
+                  f"You have returned to {location[0][1]}\n")
         else:
-            print("You have landed at...")
+            print(f"You have landed at {location[2][1]}")
 
         if location[2] == location[1]:
-            print()
-            # FINISH GAME
+            # Finish the game
+            break
+
+
+
+def end_game(settings, user_name):
+    print("Congratulations", user_name + "! You have reached your destination!")
 
 
 def main():
-    user_info = username()
+    user_info = check_username()
     settings = user.new_game()
     # settings[0] is difficulty, settings[1] is distance
     if not user_info[0]:
         init_game(settings, user_info[1])
 
     navigation_system(settings[0], user_info[1])
-
+    end_game(settings, user_info[1])
 
 main()
