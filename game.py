@@ -242,6 +242,8 @@ def navigation_system(user_name):
             else:
                 print("You are getting farther from your target.\n")
 
+            coords[0] = coords[2]
+
 
 # This function is responsible for the end-game information
 def end_game(settings, user_name):
