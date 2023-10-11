@@ -88,6 +88,9 @@ def init_game(settings, user_name):
     value = False
     location, coords = list(range(2)), list(range(2))
 
+    cursor = connection.cursor(buffered=True)
+    cursor.execute(f"UPDATE game SET difficulty = {settings[0]}, attempts = 0 WHERE screen_name = '{user_name}'")
+
     match settings[0]:
         case 0:
             airport_type = "'large_airport'"
@@ -96,7 +99,6 @@ def init_game(settings, user_name):
         case 2:
             airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
 
-    cursor = connection.cursor(buffered=True)
     cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
                    f"WHERE type = {airport_type} ORDER BY RAND() LIMIT 1")
     location[0] = cursor.fetchall()
@@ -132,11 +134,17 @@ def init_game(settings, user_name):
 
 
 # This function takes care of the navigation during the game
-def navigation_system(difficulty, user_name):
-    temp_coords = list(range(2))
+def navigation_system(user_name):
+    attempts = int()
+    direction = distance = float()
+    text, temp_coords = list(range(2)), list(range(2))
     coords, location = list(range(3)), list(range(3))
     # Index 0 = current airport, Index 1 = target airport, Index 2 = next airport
     cursor = connection.cursor(buffered=True)
+
+    cursor.execute(f"SELECT attempts FROM game WHERE screen_name = '{user_name}'")
+    for data in cursor.fetchall():
+        attempts = data[0]
 
     for i in range(2):
         if i == 0:
@@ -145,45 +153,60 @@ def navigation_system(difficulty, user_name):
             value = 'target'
         cursor.execute(f"SELECT ident, name, latitude_deg, longitude_deg FROM airport LEFT JOIN game ON game.{value} = ident "
                        f"WHERE game.screen_name = '{user_name}'")
-        location[i] = cursor.fetchall()
-        for row in location[i]:
+        result = cursor.fetchall()
+        for row in result:
+            location[i] = [row[0], row[1], row[2], row[3]]
             coords[i] = [row[2], row[3]]
 
+    cursor.execute(f"SELECT difficulty FROM game WHERE screen_name = '{user_name}'")
+    value = cursor.fetchone()
+    difficulty = value[0]
+
+    match difficulty:
+        case 0:
+            airport_type = "'large_airport'"
+        case 1:
+            airport_type = "'large_airport' OR TYPE = 'medium_airport'"
+        case 2:
+            airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
+
+    print('\n' * 100)
     while True:
-        print('\n')
-        while True:
-            print("In order to travel you must select a direction.\n"
-                  "For an explanation of the direction system write 'explain'.\n")
-            option = input("Insert a direction: ")
+        print(f"You are now in: {location[0][1]}\n"
+              f"You must reach: {location[1][1]}\n"
+              "\nYou will be given directions as you move.\n")
 
-            if option != 'explain':
-                try:
-                    direction = float(option)
-                    break
-                except ValueError:
-                    print("Invalid option!\n")
+        for i in range(2):
+            if i == 0:
+                text[0] = "In order to travel you must select a direction (degrees).\n"\
+                          "Write 'help' for additional information.\n"
+                text[1] = "Write help here"
             else:
-                print('stuff\n')
+                text[0] = "In addition, you must also select a distance (kilometers).\n"\
+                          "Write 'help' for additional information.\n"
+                text[1] = "Write help here"
 
-        while True:
-            print("In addition, you also need to select a distance (km).\n")
-            try:
-                distance = float(input("Insert a distance: "))
-            except ValueError:
-                print("Must be a float!\n")
+            while True:
+                print(text[0])
+                option = input("Insert a value: ")
+
+                if option != 'explain':
+                    try:
+                        float(option)
+                        break
+                    except ValueError:
+                        print("Invalid option!\n")
+                else:
+                    print(text[1])
+
+            if i == 0:
+                direction = float(option)
             else:
-                break
-
-        match difficulty:
-            case 0:
-                airport_type = "'large_airport'"
-            case 1:
-                airport_type = "'large_airport' OR TYPE = 'medium_airport'"
-            case 2:
-                airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
+                distance = float(option)
 
         destination = geodesic(kilometers=distance).destination(coords[0], direction)
         temp_coords[0] = [destination.latitude, destination.longitude]
+
         cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
                        f"WHERE type = {airport_type}")
         airports = cursor.fetchall()
@@ -198,30 +221,50 @@ def navigation_system(difficulty, user_name):
                 coords[2] = [row[2], row[3]]
                 location[2] = [row[0], row[1], row[2], row[3]]
 
-        if location[2] == location[0]:
-            print("You didn't find any airport in that direction!\n"
-                  f"You have returned to {location[0][1]}\n")
-        else:
-            print(f"You have landed at {location[2][1]}")
-
+        print('\n' * 100)
         if location[2] == location[1]:
             # Finish the game
-            break
+            return difficulty, attempts
+
+        if location[2] == location[0]:
+            print("You didn't find any airport in that direction!\n"
+                  f"Therefore, you have returned to {location[0][1]}.\n"
+                  "\nYou are at the same distance from your target.\n")
+        else:
+            print(f"You have landed at {location[2][1]}")
+            attempts += 1
+            location[0] = location[2]
+            cursor.execute(f"UPDATE game SET location = '{location[0][0]}', attempts = {attempts} "
+                           f"WHERE screen_name = '{user_name}'")
+
+            if geodesic(coords[2], coords[1]).km < geodesic(coords[0], coords[1]):
+                print("You are getting closer to your target.\n")
+            else:
+                print("You are getting farther from your target.\n")
 
 
-
+# This function is responsible for the end-game information
 def end_game(settings, user_name):
-    print("Congratulations", user_name + "! You have reached your destination!")
+    # settings[0] is difficulty, settings[1] is attempts
+    print("Congratulations", user_name + "! You have reached your destination!\n"
+          "It took you", settings[1], "attempts!\n")
+
+    match settings[0]:
+        case 0:
+            print("Difficulty: Easy")
+        case 1:
+            print("Difficulty: Normal")
+        case 2:
+            print("Difficulty: Hard")
 
 
 def main():
     user_info = check_username()
-    settings = user.new_game()
-    # settings[0] is difficulty, settings[1] is distance
+    # user.new_game[0] is difficulty, user.new_game[1] is distance
     if not user_info[0]:
-        init_game(settings, user_info[1])
+        init_game(user.new_game(), user_info[1])
 
-    navigation_system(settings[0], user_info[1])
-    end_game(settings, user_info[1])
+    end_game(navigation_system(user_info[1]), user_info[1])
+
 
 main()
