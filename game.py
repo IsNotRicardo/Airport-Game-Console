@@ -66,6 +66,7 @@ def username():
                                     return True, user_name
                                 case 2:
                                     break
+
                     input("Press any key to continue")
                     return False, user_name
             case 2:
@@ -75,9 +76,51 @@ def username():
 
 
 # This function initializes a new game
-def init_game(settings, username):
+def init_game(settings, screen_name):
     # settings[0] is difficulty, settings[1] is distance
-    print(settings[0], settings[1])
+
+    value = False
+    location, coords = list(range(2)), list(range(2))
+    match settings[0]:
+        case 0:
+            airport_type = "large_airport"
+        case 1:
+            airport_type = "large_airport, medium_airport"
+        case 2:
+            airport_type = "large_airport, medium_airport, small_airport"
+
+    cursor = connection.cursor(buffered=True)
+    cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
+                   f"WHERE type IN ('{airport_type}') ORDER BY RAND() LIMIT 1")
+    location[0] = cursor.fetchall()
+    for row in location[0]:
+        coords[0] = [row[2], row[3]]
+        cursor.execute(f"UPDATE game SET location = '{row[0]}' WHERE screen_name = '{screen_name}'")
+
+    while True:
+        cursor = connection.cursor(buffered=True)
+        cursor.execute("SELECT ident, name, latitude_deg, longitude_deg FROM airport "
+                       f"WHERE type IN ('{airport_type}') ORDER BY RAND() LIMIT 1")
+        location[1] = cursor.fetchall()
+        for row in location[1]:
+            coords[1] = [row[2], row[3]]
+
+        match settings[1]:
+            case 0:
+                if 1000 <= geodesic(coords[0], coords[1]).km < 5000:
+                    value = True
+            case 1:
+                if 5000 <= geodesic(coords[0], coords[1]).km < 12000:
+                    value = True
+            case 2:
+                if 12000 <= geodesic(coords[0], coords[1]).km:
+                    value = True
+
+        if value:
+            for row in location[1]:
+                cursor.execute(f"UPDATE game SET target = '{row[0]}' WHERE screen_name = '{screen_name}'")
+            print(location, geodesic(coords[0], coords[1]).km)
+            break
 
 
 # This function takes care of the navigation during the game
