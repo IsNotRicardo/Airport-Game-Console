@@ -1,5 +1,5 @@
 def tutorial():
-    print("Hello and welcome to <game_name>\n"
+    print("Hello and welcome to Path:Unknown\n"
           "\n"
           "In this game you will spawn at a random airport, anywhere in the world.\n"
           "Your objective is to reach a specific airport in the minimum amount of attempts possible.\n"
