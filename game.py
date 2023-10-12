@@ -58,6 +58,7 @@ def username_data(user_name):
             f"VALUES ({total_id},'999', '10000', NULL, '{user_name}', NULL, NULL, NULL)")
 
         print("Username", user_name, "added to the database.\n")
+        input("Press any key to continue")
         return False, user_name
     else:
         print("Welcome back", user_name + '!\n')
@@ -119,10 +120,10 @@ def init_game(settings, user_name):
                 if 1000 <= geodesic(coords[0], coords[1]).km < 5000:
                     value = True
             case 1:
-                if 5000 <= geodesic(coords[0], coords[1]).km < 12000:
+                if 5000 <= geodesic(coords[0], coords[1]).km < 11000:
                     value = True
             case 2:
-                if 12000 <= geodesic(coords[0], coords[1]).km:
+                if 11000 <= geodesic(coords[0], coords[1]).km:
                     value = True
 
         if value:
@@ -134,8 +135,8 @@ def init_game(settings, user_name):
 
 # This function takes care of the navigation during the game
 def navigation_system(user_name):
-    attempts = int()
-    direction = distance = float()
+    attempts = score = int()
+    travel_distance = direction = distance = float()
     text, temp_coords = list(range(2)), list(range(2))
     coords, location = list(range(3)), list(range(3))
     # Index 0 = current airport, Index 1 = target airport, Index 2 = next airport
@@ -150,8 +151,8 @@ def navigation_system(user_name):
             value = 'location'
         else:
             value = 'target'
-        cursor.execute(f"SELECT ident, name, latitude_deg, longitude_deg FROM airport LEFT JOIN game ON game.{value} = ident "
-                       f"WHERE game.screen_name = '{user_name}'")
+        cursor.execute(f"SELECT ident, name, latitude_deg, longitude_deg FROM airport "
+                       f"LEFT JOIN game ON game.{value} = ident WHERE game.screen_name = '{user_name}'")
         result = cursor.fetchall()
         for row in result:
             location[i] = [row[0], row[1], row[2], row[3]]
@@ -200,7 +201,6 @@ def navigation_system(user_name):
                     except ValueError:
                         print("Invalid option!\n")
 
-
             if i == 0:
                 direction = float(option)
             else:
@@ -223,11 +223,24 @@ def navigation_system(user_name):
                 coords[2] = [row[2], row[3]]
                 location[2] = [row[0], row[1], row[2], row[3]]
 
+        travel_distance += length
+        attempts += 1
+
         print('\n' * 100)
         if location[2] == location[1]:
             # Finish the game
+            match difficulty:
+                case 0:
+                    score = int(2000 / travel_distance * 100)
+                case 1:
+                    score = int(3000 / travel_distance * 100)
+                case 2:
+                    score = int(4500 / travel_distance * 100)
+
+            cursor.execute("UPDATE game SET co2_limit = NULL, location = NULL, target = NULL, "
+                           f"attempts = NULL, difficulty = NULL WHERE screen_name = '{user_name}'")
             print(f"You landed at {location[2][1]}")
-            return difficulty, attempts
+            return difficulty, attempts, score
 
         if location[2] == location[0]:
             print("You didn't find any airport in that direction!\n"
@@ -235,7 +248,6 @@ def navigation_system(user_name):
                   "\nYou are at the same distance from your target.\n")
         else:
             print(f"You landed at {location[2][1]}")
-            attempts += 1
             location[0] = location[2]
             cursor.execute(f"UPDATE game SET location = '{location[0][0]}', attempts = {attempts} "
                            f"WHERE screen_name = '{user_name}'")
@@ -250,26 +262,47 @@ def navigation_system(user_name):
 
 # This function is responsible for the end-game information
 def end_game(settings, user_name):
-    # settings[0] is difficulty, settings[1] is attempts
-    print("Congratulations", user_name + "! You have reached your destination!\n"
-          "It took you", settings[1], "attempts!\n")
+    # settings[0] is difficulty, settings[1] is attempts, settings[2] is score
+    print("Congratulations", user_name +
+          "! You have reached your destination!\n"
+          "It took you", settings[1], "attempts!\n"
+          "\nYou score was:", settings[2], '\n')
 
     match settings[0]:
         case 0:
-            print("Difficulty: Easy")
+            print("Difficulty: Easy\n")
         case 1:
-            print("Difficulty: Normal")
+            print("Difficulty: Normal\n")
         case 2:
-            print("Difficulty: Hard")
+            print("Difficulty: Hard\n")
+
+    while True:
+        print("Do you want to continue playing?\n"
+              "1. Yes\n"
+              "2. No\n")
+
+        match (user.choose_option()):
+            case 1:
+                return True
+            case 2:
+                print("Exiting game...")
+                break
+            case _:
+                print("Invalid option!\n")
 
 
 def main():
+    continue_game = False
     user_info = check_username()
     # user.new_game[0] is difficulty, user.new_game[1] is distance
-    if not user_info[0]:
-        init_game(user.new_game(), user_info[1])
+    while True:
+        if not user_info[0] or continue_game is True:
+            init_game(user.new_game(), user_info[1])
 
-    end_game(navigation_system(user_info[1]), user_info[1])
+        if end_game(navigation_system(user_info[1]), user_info[1]):
+            continue_game = True
+        else:
+            break
 
 
 main()
