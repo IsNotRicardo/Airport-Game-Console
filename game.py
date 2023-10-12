@@ -243,8 +243,8 @@ def navigation_system(user_name):
                 case 2:
                     score = int(4500 / travel_distance * 100)
 
-            cursor.execute("UPDATE game SET co2_limit = NULL, location = NULL, target = NULL, "
-                           f"attempts = NULL, difficulty = NULL WHERE screen_name = '{user_name}'")
+            cursor.execute("UPDATE game SET co2_limit = NULL, location = NULL, target = NULL, attempts = NULL, "
+                           f"difficulty = NULL, distance = NULL WHERE screen_name = '{user_name}'")
             print(f"You landed at {location[2][1]}")
             return difficulty, attempts, score
 
