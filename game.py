@@ -10,6 +10,7 @@ alter table game rename column co2_consumed to co2_limit;
 
 """
 
+import info
 import user
 import math
 import mysql.connector
@@ -60,6 +61,21 @@ def username_data(user_name):
             f"VALUES ({total_id},'999', '10000', NULL, '{user_name}', NULL, NULL, NULL)")
 
         print("Username", user_name, "added to the database.\n")
+
+        while True:
+            print("Do you want information about the game?\n"
+                  "1. Yes\n"
+                  "2. No\n")
+            match user.choose_option():
+                case 1:
+                    info.tutorial()
+                    break
+                case 2:
+                    print("Continuing to the settings...")
+                    break
+                case _:
+                    print("Invalid option!\n")
+
         input("Press any key to continue")
         return False, user_name
     else:
@@ -181,9 +197,6 @@ def navigation_system(user_name):
     print('\n' * 100)
     print("You will be given directions as you move.\n")
     while True:
-        print(f"You are now in: {location[0][1]}\n"
-              f"You must reach: {location[1][1]}\n")
-
         for i in range(2):
             if i == 0:
                 text[0] = "In order to travel you must select a direction (degrees).\n"
@@ -197,6 +210,8 @@ def navigation_system(user_name):
                            "However, we recommend sticking to positive integers.\n")
 
             while True:
+                print(f"You are now in: {location[0][1]}\n"
+                      f"You must reach: {location[1][1]}\n")
                 print(text[0])
                 print("Write 'help' for additional information.\n"
                       "Write 'quit' to quit the program.\n")
@@ -298,6 +313,7 @@ def end_game(settings, user_name):
             case 1:
                 return True
             case 2:
+                info.game_credits()
                 print("Exiting game...")
                 break
             case _:

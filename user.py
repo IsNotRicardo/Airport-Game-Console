@@ -1,4 +1,7 @@
 # This function changes the settings that can only have one option
+import info
+
+
 def change_setting(opt_list, value):
     choice = choose_option() - 1
 
@@ -47,7 +50,7 @@ def new_game():
               f"Easy[{difficulty[0]}]     Normal[{difficulty[1]}]     Hard[{difficulty[2]}]\n")
         print("— Target Distance:\n"
               f"Near[{distance[0]}]     Average[{distance[1]}]     Far[{distance[2]}]\n")
-        print("— Extra Settings: (optional):\n"
+        print("— Extra Settings (optional):\n"
               f"Overwater Modifier[{extra[0]}]     Hel Mode[{extra[1]}]\n")
 
         print("Change options: \n"
@@ -55,7 +58,9 @@ def new_game():
               "2. Difficulty\n"
               "3. Distance\n"
               "4. Modifiers (WIP)\n"
-              "5. Quit\n")
+              "5. Help\n"
+              "6. Credits\n"
+              "7. Quit\n")
 
         match choose_option():
             case 1:
@@ -92,6 +97,10 @@ def new_game():
                 else:
                     print("Invalid option!\n")
             case 5:
+                info.tutorial()
+            case 6:
+                info.game_credits()
+            case 7:
                 quit()
             case _:
                 print("Invalid option!\n")
