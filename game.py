@@ -5,6 +5,7 @@ HERE ARE ALL THE SQL COMMANDS TO EDIT THE DATABASE:
 alter table game add target varchar(10);
 alter table game add attempts int(8);
 alter table game add difficulty int(8);
+alter table game add distance int(8);
 alter table game rename column co2_consumed to co2_limit;
 
 """
@@ -90,7 +91,8 @@ def init_game(settings, user_name):
     location, coords = list(range(2)), list(range(2))
 
     cursor = connection.cursor(buffered=True)
-    cursor.execute(f"UPDATE game SET difficulty = {settings[0]}, attempts = 0 WHERE screen_name = '{user_name}'")
+    cursor.execute(f"UPDATE game SET difficulty = {settings[0]}, attempts = 0, distance = 0 "
+                   f"WHERE screen_name = '{user_name}'")
 
     match settings[0]:
         case 0:
@@ -135,8 +137,8 @@ def init_game(settings, user_name):
 
 # This function takes care of the navigation during the game
 def navigation_system(user_name):
-    attempts = score = int()
-    travel_distance = direction = distance = float()
+    attempts = score = travel_distance = int()
+    direction = distance = float()
     text, temp_coords = list(range(2)), list(range(2))
     coords, location = list(range(3)), list(range(3))
     # Index 0 = current airport, Index 1 = target airport, Index 2 = next airport
@@ -145,6 +147,10 @@ def navigation_system(user_name):
     cursor.execute(f"SELECT attempts FROM game WHERE screen_name = '{user_name}'")
     for data in cursor.fetchall():
         attempts = data[0]
+
+    cursor.execute(f"SELECT distance FROM game WHERE screen_name = '{user_name}'")
+    for data in cursor.fetchall():
+        travel_distance = data[0]
 
     for i in range(2):
         if i == 0:
@@ -223,8 +229,8 @@ def navigation_system(user_name):
                 coords[2] = [row[2], row[3]]
                 location[2] = [row[0], row[1], row[2], row[3]]
 
-        travel_distance += length
         attempts += 1
+        travel_distance += int(geodesic(coords[0], coords[2]).km)
 
         print('\n' * 100)
         if location[2] == location[1]:
@@ -249,8 +255,8 @@ def navigation_system(user_name):
         else:
             print(f"You landed at {location[2][1]}")
             location[0] = location[2]
-            cursor.execute(f"UPDATE game SET location = '{location[0][0]}', attempts = {attempts} "
-                           f"WHERE screen_name = '{user_name}'")
+            cursor.execute(f"UPDATE game SET location = '{location[0][0]}', attempts = {attempts}, "
+                           f"distance = {travel_distance} WHERE screen_name = '{user_name}'")
 
             if geodesic(coords[2], coords[1]).km < geodesic(coords[0], coords[1]):
                 print("\nYou are getting closer to your target.\n")
