@@ -186,7 +186,7 @@ def navigation_system(user_name):
             while True:
                 print(text[0])
                 print("Write 'help' for additional information.\n"
-                      "Write 'quit' to exit the program.\n")
+                      "Write 'quit' to quit the program.\n")
                 option = input("Insert a value: ")
 
                 if option.lower() == 'explain':
