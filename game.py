@@ -114,7 +114,6 @@ def init_game(settings, user_name):
         for row in location[1]:
             coords[1] = [row[2], row[3]]
 
-        print(coords)
         match settings[1]:
             case 0:
                 if 1000 <= geodesic(coords[0], coords[1]).km < 5000:
@@ -171,33 +170,37 @@ def navigation_system(user_name):
             airport_type = "'large_airport' OR TYPE = 'medium_airport' OR TYPE = 'small_airport'"
 
     print('\n' * 100)
+    print("You will be given directions as you move.\n")
     while True:
         print(f"You are now in: {location[0][1]}\n"
-              f"You must reach: {location[1][1]}\n"
-              "\nYou will be given directions as you move.\n")
+              f"You must reach: {location[1][1]}\n")
 
         for i in range(2):
             if i == 0:
                 text[0] = "In order to travel you must select a direction (degrees).\n"\
                           "Write 'help' for additional information.\n"
-                text[1] = "Write help here"
+                text[1] = "Write help here\n"
             else:
                 text[0] = "In addition, you must also select a distance (kilometers).\n"\
                           "Write 'help' for additional information.\n"
-                text[1] = "Write help here"
+                text[1] = "Write help here\n"
 
             while True:
                 print(text[0])
+                print("(Write 'quit' to exit the program)")
                 option = input("Insert a value: ")
 
-                if option != 'explain':
+                if option.lower() == 'explain':
+                    print(text[1])
+                if option.lower() == 'quit':
+                    quit()
+                else:
                     try:
                         float(option)
                         break
                     except ValueError:
                         print("Invalid option!\n")
-                else:
-                    print(text[1])
+
 
             if i == 0:
                 direction = float(option)
@@ -224,6 +227,7 @@ def navigation_system(user_name):
         print('\n' * 100)
         if location[2] == location[1]:
             # Finish the game
+            print(f"You landed at {location[2][1]}")
             return difficulty, attempts
 
         if location[2] == location[0]:
@@ -231,16 +235,16 @@ def navigation_system(user_name):
                   f"Therefore, you have returned to {location[0][1]}.\n"
                   "\nYou are at the same distance from your target.\n")
         else:
-            print(f"You have landed at {location[2][1]}")
+            print(f"You landed at {location[2][1]}")
             attempts += 1
             location[0] = location[2]
             cursor.execute(f"UPDATE game SET location = '{location[0][0]}', attempts = {attempts} "
                            f"WHERE screen_name = '{user_name}'")
 
             if geodesic(coords[2], coords[1]).km < geodesic(coords[0], coords[1]):
-                print("You are getting closer to your target.\n")
+                print("\nYou are getting closer to your target.\n")
             else:
-                print("You are getting farther from your target.\n")
+                print("\nYou are getting farther from your target.\n")
 
             coords[0] = coords[2]
 
