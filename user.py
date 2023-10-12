@@ -9,9 +9,9 @@ def change_setting(opt_list, value):
             else:
                 opt_list[num] = ' '
 
-        print("Setting changed!")
+        print("Setting changed!\n")
     else:
-        print("Invalid option!")
+        print("Invalid option!\n")
 
 
 # This generic function asks the user to select an option
@@ -32,7 +32,7 @@ def start_game(diff, dist):
         print("Starting game...")
         return diff.index('X'), dist.index('X')
     else:
-        print("You must select a Difficulty and a Distance first!")
+        print("You must select a Difficulty and a Distance first!\n")
     return -1, -1
 
 
@@ -85,13 +85,15 @@ def new_game():
                 if 0 <= choice_extra <= len(extra) - 1:
                     if extra[choice_extra] == ' ':
                         extra[choice_extra] = 'X'
-                        print("Modifier added!")
+                        print("Modifier added!\n")
                     else:
                         extra[choice_extra] = ' '
-                        print("Modifier removed!")
+                        print("Modifier removed!\n")
+                else:
+                    print("Invalid option!\n")
             case 5:
                 quit()
             case _:
-                print("Invalid option!")
+                print("Invalid option!\n")
 
         input("Press any key to continue")

@@ -42,6 +42,7 @@ def check_username():
                 print("Returning to the menu...\n")
             case _:
                 print("Invalid option!\n")
+                input("Press any key to continue")
 
 
 # This functions checks the data from the username
@@ -137,6 +138,7 @@ def init_game(settings, user_name):
 
 # This function takes care of the navigation during the game
 def navigation_system(user_name):
+    airport_type = str()
     attempts = score = travel_distance = int()
     direction = distance = float()
     text, temp_coords = list(range(2)), list(range(2))
@@ -185,10 +187,14 @@ def navigation_system(user_name):
         for i in range(2):
             if i == 0:
                 text[0] = "In order to travel you must select a direction (degrees).\n"
-                text[1] = "Write help here\n"
+                text[1] = ("The direction can be any float number and is measured in degrees.\n"
+                           "However, we recommend sticking to integers from 0º to 360º.\n"
+                           "The angle of the direction increments in a clockwise motion.\n"
+                           "\n0º is North, 90º is East, 180º is South and 270º is West.\n")
             else:
                 text[0] = "In addition, you must also select a distance (kilometers).\n"
-                text[1] = "Write help here\n"
+                text[1] = ("The distance can be any float number and is measured in kilometers.\n"
+                           "However, we recommend sticking to positive integers.\n")
 
             while True:
                 print(text[0])
@@ -196,9 +202,10 @@ def navigation_system(user_name):
                       "Write 'quit' to quit the program.\n")
                 option = input("Insert a value: ")
 
-                if option.lower() == 'explain':
+                if option.lower() == 'help':
+                    print('\n' * 100)
                     print(text[1])
-                if option.lower() == 'quit':
+                elif option.lower() == 'quit':
                     quit()
                 else:
                     try:
@@ -237,11 +244,11 @@ def navigation_system(user_name):
             # Finish the game
             match difficulty:
                 case 0:
-                    score = int(2000 / travel_distance * 100)
+                    score = int(2000 / travel_distance * 10000)
                 case 1:
-                    score = int(3000 / travel_distance * 100)
+                    score = int(3000 / travel_distance * 10000)
                 case 2:
-                    score = int(4500 / travel_distance * 100)
+                    score = int(4500 / travel_distance * 10000)
 
             cursor.execute("UPDATE game SET co2_limit = NULL, location = NULL, target = NULL, attempts = NULL, "
                            f"difficulty = NULL, distance = NULL WHERE screen_name = '{user_name}'")
