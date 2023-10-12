@@ -177,17 +177,16 @@ def navigation_system(user_name):
 
         for i in range(2):
             if i == 0:
-                text[0] = "In order to travel you must select a direction (degrees).\n"\
-                          "Write 'help' for additional information.\n"
+                text[0] = "In order to travel you must select a direction (degrees).\n"
                 text[1] = "Write help here\n"
             else:
-                text[0] = "In addition, you must also select a distance (kilometers).\n"\
-                          "Write 'help' for additional information.\n"
+                text[0] = "In addition, you must also select a distance (kilometers).\n"
                 text[1] = "Write help here\n"
 
             while True:
                 print(text[0])
-                print("(Write 'quit' to exit the program)")
+                print("Write 'help' for additional information.\n"
+                      "Write 'quit' to exit the program.\n")
                 option = input("Insert a value: ")
 
                 if option.lower() == 'explain':
